@@ -51,7 +51,7 @@ def train():
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model"
-       
+        )
         with open(RUN_ID_PATH, "w") as f:
             f.write(run.info.run_id)
 
