@@ -9,13 +9,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# Aktifkan autolog
+# Autolog
 mlflow.autolog()
 
-# Path dataset (1 folder dengan modelling.py)
+# Path dataset
 DATA_PATH = "gender_classification_preprocessed.csv"
 
-# Path run_id (AMAN CI)
+# Path run_id
 RUN_ID_PATH = os.path.join(os.path.dirname(__file__), "run_id.txt")
 
 
