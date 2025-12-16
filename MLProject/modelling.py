@@ -45,14 +45,16 @@ def train():
         preds = model.predict(X_test)
         acc = accuracy_score(y_test, preds)
 
+        # Log metric
         mlflow.log_metric("accuracy", acc)
-        mlflow.sklearn.log_model(model, artifact_path="model")
 
-        # Simpan run_id untuk Docker build
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model"
+       
         with open(RUN_ID_PATH, "w") as f:
             f.write(run.info.run_id)
 
-        print(f"Training selesai. Run ID: {run.info.run_id}")
 
 
 if __name__ == "__main__":
