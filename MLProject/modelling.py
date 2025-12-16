@@ -1,56 +1,77 @@
+import os
+import shutil
+
 import pandas as pd
 import mlflow
 from mlflow.sklearn import save_model
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import os
-import shutil
 
-DATA_PATH = "gender_classification_preprocessed.csv"
-RUN_ID_FILE = "run_id.txt"
-LOCAL_MODEL_DIR = "local_model_output"
+DATA_FILE = "gender_classification_preprocessed.csv"
+RUN_ID_OUTPUT = "run_id.txt"
+TEMP_MODEL_DIR = "tmp_saved_model"
 
-df = pd.read_csv(DATA_PATH)
 
-X = df.drop("gender", axis=1)
-y = df["gender"]
+def load_dataset(path):
+    print("Membaca dataset...")
+    return pd.read_csv(path)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
 
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+def prepare_data(df):
+    X = df.drop("gender", axis=1)
+    y = df["gender"]
 
-model = LogisticRegression(max_iter=1000)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
 
-try:
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return X_train, X_test, y_train, y_test
+
+
+def train_and_log():
+    df = load_dataset(DATA_FILE)
+    X_train, X_test, y_train, y_test = prepare_data(df)
+
+    model = LogisticRegression(max_iter=1000)
+
+    if os.path.exists(TEMP_MODEL_DIR):
+        shutil.rmtree(TEMP_MODEL_DIR)
+
     with mlflow.start_run() as run:
+        print("Training model dimulai...")
         model.fit(X_train, y_train)
 
-        acc = accuracy_score(y_test, model.predict(X_test))
-        mlflow.log_metric("accuracy", acc)
+        predictions = model.predict(X_test)
+        accuracy = accuracy_score(y_test, predictions)
 
-        print(f"Akurasi: {acc}")
-        run_id = run.info.run_id
+        mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_param("algorithm", "LogisticRegression")
+        mlflow.log_param("max_iter", 1000)
 
-        if os.path.exists(LOCAL_MODEL_DIR):
-            shutil.rmtree(LOCAL_MODEL_DIR)
+        print(f"Akurasi model: {accuracy}")
+        
+        save_model(model, TEMP_MODEL_DIR)
 
-        save_model(model, LOCAL_MODEL_DIR)
+        mlflow.log_artifacts(TEMP_MODEL_DIR, artifact_path="model")
 
-        mlflow.log_artifacts(LOCAL_MODEL_DIR, artifact_path="model")
+        with open(RUN_ID_OUTPUT, "w") as f:
+            f.write(run.info.run_id)
 
-        shutil.rmtree(LOCAL_MODEL_DIR)
+        print(f"Run ID disimpan: {run.info.run_id}")
 
-        with open(RUN_ID_FILE, "w") as f:
-            f.write(run_id)
+    shutil.rmtree(TEMP_MODEL_DIR)
 
-except Exception as e:
-    print("ERROR:", e)
-    if os.path.exists(LOCAL_MODEL_DIR):
-        shutil.rmtree(LOCAL_MODEL_DIR)
-    exit(1)
+
+if __name__ == "__main__":
+    train_and_log()
