@@ -9,13 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# Autolog
-mlflow.autolog()
 
-# Path dataset
 DATA_PATH = "gender_classification_preprocessed.csv"
-
-# Path run_id
 RUN_ID_PATH = os.path.join(os.path.dirname(__file__), "run_id.txt")
 
 
@@ -27,11 +22,7 @@ def train():
     y = df["gender"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
     scaler = StandardScaler()
@@ -47,14 +38,17 @@ def train():
 
         # Log metric
         mlflow.log_metric("accuracy", acc)
-
+        
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model"
         )
+
+        # Simpan run_id
         with open(RUN_ID_PATH, "w") as f:
             f.write(run.info.run_id)
 
+        print(f"Training selesai. Run ID: {run.info.run_id}")
 
 
 if __name__ == "__main__":
