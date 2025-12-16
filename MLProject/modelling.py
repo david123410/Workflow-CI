@@ -18,6 +18,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
+import os
+import mlflow
+
 # Aktifkan autolog
 mlflow.autolog()
 
@@ -57,6 +60,16 @@ def train():
             f.write(run.info.run_id)
 
         print(f"Training selesai. Run ID: {run.info.run_id}")
+
+RUN_ID_PATH = os.path.join(os.path.dirname(__file__), "run_id.txt")
+
+with mlflow.start_run() as run:
+    # training + logging model
+    ...
+
+    # SIMPAN run_id
+    with open(RUN_ID_PATH, "w") as f:
+        f.write(run.info.run_id)
 
 if __name__ == "__main__":
     train()
