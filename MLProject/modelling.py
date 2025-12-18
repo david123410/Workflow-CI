@@ -33,7 +33,6 @@ def train_and_log():
     df = load_dataset(DATA_FILE)
     X_train, X_test, y_train, y_test = prepare_data(df)
 
-    # Bersihkan folder model lama (penting untuk CI)
     if os.path.exists(LOCAL_MODEL_DIR):
         shutil.rmtree(LOCAL_MODEL_DIR)
 
@@ -46,29 +45,21 @@ def train_and_log():
         preds = model.predict(X_test)
         acc = accuracy_score(y_test, preds)
 
-        # metric manual (opsional, autolog sudah mencatat)
         mlflow.log_metric("accuracy_manual", acc)
 
         print(f"Akurasi: {acc}")
 
-        # ======================
-        # WAJIB UNTUK DOCKER
-        # ======================
         print("Menyimpan model ke folder 'model/' ...")
         mlflow.sklearn.save_model(model, LOCAL_MODEL_DIR)
 
         print("Upload artefak model ke MLflow...")
         mlflow.log_artifacts(LOCAL_MODEL_DIR, artifact_path="model")
 
-        # ======================
-        # SIMPAN RUN ID
-        # ======================
         with open(RUN_ID_FILE, "w") as f:
             f.write(run.info.run_id)
 
         print(f"Run ID disimpan: {run.info.run_id}")
 
-    # Bersihkan folder lokal
     shutil.rmtree(LOCAL_MODEL_DIR)
     print("Folder model lokal dibersihkan")
 
