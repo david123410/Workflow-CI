@@ -22,14 +22,13 @@ jobs:
       run: |
         pip install mlflow scikit-learn pandas numpy dagshub
 
-    - name: Run MLflow Training
+    - name: Run MLflow Project
       env:
         MLFLOW_TRACKING_URI: https://dagshub.com/david123410/Eksperimen_SML_David.mlflow
         MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        cd MLProject
-        mlflow run
+        mlflow run MLProject/
         
     - name: Verify MLflow artifacts
       env:
