@@ -1,3 +1,5 @@
+import os
+import shutil
 import pandas as pd
 import mlflow
 import mlflow.sklearn
@@ -5,9 +7,10 @@ import mlflow.sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-
+ 
 DATA_FILE = "gender_classification_preprocessed.csv"
 RUN_ID_FILE = "run_id.txt"
+LOCAL_MODEL_DIR = "model"  
 
 mlflow.autolog()
 
@@ -30,21 +33,44 @@ def train_and_log():
     df = load_dataset(DATA_FILE)
     X_train, X_test, y_train, y_test = prepare_data(df)
 
+    # Bersihkan folder model lama (penting untuk CI)
+    if os.path.exists(LOCAL_MODEL_DIR):
+        shutil.rmtree(LOCAL_MODEL_DIR)
+
     with mlflow.start_run() as run:
+        print("Training dimulai...")
+
         model = LogisticRegression(max_iter=1000)
         model.fit(X_train, y_train)
 
         preds = model.predict(X_test)
         acc = accuracy_score(y_test, preds)
 
-        # Optional (boleh ada)
+        # metric manual (opsional, autolog sudah mencatat)
         mlflow.log_metric("accuracy_manual", acc)
 
-        # Simpan run_id untuk CI / Docker
+        print(f"Akurasi: {acc}")
+
+        # ======================
+        # WAJIB UNTUK DOCKER
+        # ======================
+        print("Menyimpan model ke folder 'model/' ...")
+        mlflow.sklearn.save_model(model, LOCAL_MODEL_DIR)
+
+        print("Upload artefak model ke MLflow...")
+        mlflow.log_artifacts(LOCAL_MODEL_DIR, artifact_path="model")
+
+        # ======================
+        # SIMPAN RUN ID
+        # ======================
         with open(RUN_ID_FILE, "w") as f:
             f.write(run.info.run_id)
 
         print(f"Run ID disimpan: {run.info.run_id}")
+
+    # Bersihkan folder lokal
+    shutil.rmtree(LOCAL_MODEL_DIR)
+    print("Folder model lokal dibersihkan")
 
 if __name__ == "__main__":
     train_and_log()
